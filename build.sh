@@ -30,7 +30,6 @@ bazel build //ci/raydepsets:raydepsets --build_python_zip
 # Copy outputs to _output/
 echo "==> Copying build artifacts..."
 cp bazel-bin/ci/raydepsets/raydepsets "$OUTPUT_DIR/raydepsets"
-cp bazel-bin/ci/raydepsets/raydepsets.zip "$OUTPUT_DIR/raydepsets.zip"
 
 echo "==> Done! Binary is at: $OUTPUT_DIR/raydepsets"
 echo "    Upload the contents of $OUTPUT_DIR/ as a GitHub release artifact."
