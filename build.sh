@@ -2,7 +2,7 @@
 # Build the raydepsets standalone zipapp binary from the Ray repo.
 #
 # Reads the commit hash from .raycommit, clones ray at that commit,
-# installs dependencies, and produces the binary in _output/.
+# and uses Bazel to produce the binary in _output/.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,7 +10,6 @@ RAY_COMMIT="$(cat "$SCRIPT_DIR/.raycommit" | tr -d '[:space:]')"
 RAY_REPO="https://github.com/ray-project/ray.git"
 WORK_DIR="$SCRIPT_DIR/_build"
 OUTPUT_DIR="$SCRIPT_DIR/_output"
-RAYDEPSETS_SRC="ci/raydepsets"
 
 echo "==> Building raydepsets binary for Ray commit: $RAY_COMMIT"
 
@@ -24,19 +23,14 @@ git clone --no-checkout --filter=blob:none "$RAY_REPO" "$WORK_DIR/ray"
 cd "$WORK_DIR/ray"
 git checkout "$RAY_COMMIT"
 
-# Ensure uv is available (required at runtime by raydepsets)
-if ! command -v uv &>/dev/null; then
-    echo "==> Installing uv..."
-    pip install --quiet uv
-fi
+# Build raydepsets zip with Bazel
+echo "==> Building raydepsets with Bazel..."
+bazel build //ci/raydepsets:raydepsets --build_python_zip
 
-# Install raydepsets and its dependencies from the source pyproject.toml
-echo "==> Installing raydepsets dependencies..."
-pip install --quiet "$WORK_DIR/ray/$RAYDEPSETS_SRC"
-
-# Build the zipapp binary
-echo "==> Building zipapp binary..."
-python "$WORK_DIR/ray/$RAYDEPSETS_SRC/build_zipapp.py" "$OUTPUT_DIR/raydepsets"
+# Copy outputs to _output/
+echo "==> Copying build artifacts..."
+cp bazel-bin/ci/raydepsets/raydepsets "$OUTPUT_DIR/raydepsets"
+cp bazel-bin/ci/raydepsets/raydepsets.zip "$OUTPUT_DIR/raydepsets.zip"
 
 echo "==> Done! Binary is at: $OUTPUT_DIR/raydepsets"
 echo "    Upload the contents of $OUTPUT_DIR/ as a GitHub release artifact."
