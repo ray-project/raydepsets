@@ -25,11 +25,16 @@ git checkout "$RAY_COMMIT"
 
 # Build raydepsets zip with Bazel
 echo "==> Building raydepsets with Bazel..."
-bazel build //ci/raydepsets:raydepsets --build_python_zip
+bazelisk build //ci/raydepsets:raydepsets --build_python_zip --enable_runfiles --incompatible_use_python_toolchains=false --python_path=python
 
-# Copy outputs to _output/
+# Determine platform tag
+OS="$(uname -s | tr '[:upper:]' '[:lower:]')"    # linux, darwin
+ARCH="$(uname -m)"                                 # x86_64, aarch64, arm64
+PLATFORM="${OS}-${ARCH}"
+
+# Copy outputs to _output/ with platform tag
 echo "==> Copying build artifacts..."
-cp bazel-bin/ci/raydepsets/raydepsets "$OUTPUT_DIR/raydepsets"
+cp bazel-bin/ci/raydepsets/raydepsets "$OUTPUT_DIR/raydepsets-${PLATFORM}"
 
-echo "==> Done! Binary is at: $OUTPUT_DIR/raydepsets"
+echo "==> Done! Binary is at: $OUTPUT_DIR/raydepsets-${PLATFORM}"
 echo "    Upload the contents of $OUTPUT_DIR/ as a GitHub release artifact."
